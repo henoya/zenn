@@ -3,7 +3,7 @@ title: "Raspberry Pi Picoで自作キーボード"
 emoji: "⌨️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["自作キーボード","RaspberryPiPico","KMK","CircutPython"]
-published: false
+published: true
 ---
 
 Raspberry Pi Pico をコントローラーにつかった自作キーボードの記事を書いてみます。

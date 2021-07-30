@@ -1,10 +1,17 @@
 ---
-title: "Raspberry Pi Picoで自作キーボード"
+title: "Raspberry Pi Picoで自作キーボード：2021-07-20追記"
 emoji: "⌨️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["自作キーボード","RaspberryPiPico","KMK","CircutPython"]
 published: true
 ---
+
+:::message
+2021-07-20
+CircuitPython のバグについて追加しました。Issueを投げています。
+CircuitPython7.0.0-alpha5 での動作について追加しました。
+KMK Firmware のアップデートでの変更箇所を追加しました。
+:::
 
 Raspberry Pi Pico をコントローラーにつかった自作キーボードの記事を書いてみます。
 まだ情報自体少ないので参考になればと思います。
@@ -131,6 +138,9 @@ https://circuitpython.org/downloads
     ![CircuitPython 6.3.0](https://storage.googleapis.com/zenn-user-upload/804fd69a810e9e34a5e1b64f.png)
 
     ここで言語がデフォルトでは JAPANESE になっています。JAPANESE でダウンロードすると、コンソールに出力される CircuitPython からのメッセージが日本語になるようです。私はそのまま JAPANESE でダウンロードましたが、検索でヒットしたページの例では JAPANESE だとうまく動作しなかった場合があるようですので、うまく動かなかったら ENGLISH で試してみるといいかもしれません。
+
+    - 2021-07-30 追記：CircuitPython 7.0.0-alpha5でも KMK Firmware 自体は動作するようです。
+      - 下記のサンプルコードでLEDをアニメーションさせると、リセット時にボリュームが再マウントされず、ハングアップする現象が確認できました。CircuitPython 6.3.0 と macOS の組み合わせ時のバグのようです。
 
   - ダウンロードボタンをクリックすると `adafruit-circuitpython-raspberry_pi_pico-ja-6.3.0.uf2` ファイルがダウンロードされます。この拡張子 `.uf2` ファイルが Raspberry Pi Pico の CircuitPython プログラムのイメージファイルです。
 - CircuitPython イメージの書き込み
@@ -290,7 +300,7 @@ col1 -> GP15
 
 ## KMK のファイルコーディング
 
-`board/` ディレクトリと `user_keymaps/` ディレクトリのふぁいるを参考に、まずは `kb.py` から。
+`board/` ディレクトリと `user_keymaps/` ディレクトリのファイルを参考に、まずは `kb.py` から。
 
 ```python:kb.py
 import board
@@ -349,6 +359,7 @@ kmk ディレクトリの中をみると、 `extensions/` ディレクトリと 
 - `modules/modtap.py` モデファイヤキー
 - `modules/power.py` 省エネルギー設定。LEDオフやキースキャンの頻度、スリープ設定など
 - `modules/split.py` 分割キーボード設定
+- `modules/encoder.py` 2021-07-30 追記：ロータリーエンコーダーのド設定が追加されています。
 
 ## `Extension` の内容
 
@@ -457,3 +468,72 @@ if __name__ == '__main__':
 
 キーを押したときのハンドラーを乗っ取るために process_key メソッドを上書きしたのと、1回だけLED明滅アニメーションさせるユーザー定義関数を追加しました。
 ひととおり動作確認できました。
+
+# バグ・不具合について
+
+:::message
+2021-07-20
+CircuitPython のバグについて追加しました。Issueを投げています。
+CircuitPython7.0.0-alpha5 での動作について追加しました。
+KMK Firmware のアップデートでの変更箇所を追加しました。
+:::
+
+## Raspberry Pi Pico がハングアップするバグ
+
+2021-07-30:追記
+上記コードでのLEDアニメーションをさせると、USBの抜き差し時などのリセット後に動作が止まり、ボリュームの再マウントもされない状態になることが確認しました。
+CircuitPython 6.3.0 と macOS の組み合わせでのバグのようです。7.0.0 では修正対応がなされているもようですが、KMKのledモジュールがうまく動作できませんでしたので未確認です。
+
+`BOOTSEL` ボタンを押しながら、USB を指すなどリセットすると、`RPI-RP2` ボリュームがマウントされます。ただし、この状態では CircuitPython の `UF2` ファイルを上書きしても CircuitPython のコード部分は残ったままになるので、インストール後にまたハングアップしてしまいます。
+このような場合は、一度 Flashメモリ全体を消去してから再度 CircuitPython からインストールしなおす必要があります。
+
+## Raspberry Pi Pico の初期化
+
+下記ページから `flash_nuke.uf2` をダウンロードします。
+
+https://learn.adafruit.com/getting-started-with-raspberry-pi-pico-circuitpython/circuitpython
+
+`BOOTSEL` ボタンを押しながらUSBを差し込み、マウントされた `RPI-RP2` ボリュームに `flash_nuke.uf2` をコピーします。Flashメモリが初期化され、再度 `RPI-RP2` ボリュームがマウントされますので、CircuitPython の UF2 をコピーします。
+
+修正版コード
+
+```python:main.py
+import board
+
+from kb import KMKKeyboard
+from kmk.keys import KC
+from kmk.modules.layers import Layers
+from kmk.handlers.sequences import simple_key_sequence
+
+keyboard = KMKKeyboard()
+# debug_enabled = True にするとデバッグログが表示される
+keyboard.debug_enabled = False
+
+# Cleaner key names
+_______ = KC.TRNS
+XXXXXXX = KC.NO
+
+# レイヤーモジュールを組み込み
+layers_mod = Layers()
+keyboard.modules = [layers_mod]
+
+RAISE = KC.MO(1)
+# 通常の文字列送信は send_string で実行できるはずだが、あらかじめ KC.A 等初期化しておかないと
+# エラーになるので simple_key_sequence を使用
+MACRO_BASE = simple_key_sequence((KC.A, KC.B, KC.C, KC.D,))
+MACRO_RAISE = simple_key_sequence((KC.N0, KC.N1, KC.N2, KC.N3,))
+
+keyboard.keymap = [
+    [  #Base
+        RAISE, KC.A, KC.LED_TOG, MACRO_BASE
+    ],
+    [  #RAISE
+        _______, KC.N0, _______, MACRO_RAISE
+    ]
+]
+
+if __name__ == '__main__':
+    keyboard.go()
+```
+
+- また、`KC.INT1` 等のキーコードが 0x80 以上のコードがホスト側に送られないというバグもあります。こちらも macOS との組み合わせで起こる問題のようで、[International keycode cannot be sent or received by macOS host #5076](https://github.com/adafruit/circuitpython/issues/5076) をたてました。

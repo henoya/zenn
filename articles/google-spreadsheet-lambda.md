@@ -111,7 +111,7 @@ Excel で先に実装された LAMBDA関数の後追い実装になります。
 
 また、式の入力時に説明が表示されるので、この点でもあつかいやすくなります。
 
-![名前付き関数引数使用](./spreadsheet-lambda-img/named-function-use.png)
+![名前付き関数引数使用](https://storage.googleapis.com/zenn-user-upload/dac09fbed238-20220918.png)
 
 ## LAMBDA関数
 
@@ -129,7 +129,7 @@ LAMBDA関数は関数なので、基本的には数式中に書くことにな�
 =LAMBDA(単価,個数,単価*個数)(B3,C3)
 ```
 
-![LAMBDA関数使用](./spreadsheet-lambda-img/lambda-exp.png)
+![LAMBDA関数使用](https://storage.googleapis.com/zenn-user-upload/0e80f4ff10be-20220918.png)
 
 上記の LAMBDA関数の内容を分解すると、このような要素になります。
 

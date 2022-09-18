@@ -3,7 +3,7 @@ title: "Googleスプレッドシートの「名前付き関数」と「LAMBDA関
 emoji: "⚙️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["googlespreadsheet"]
-published: false
+published: true
 ---
 
 # 「名前付き関数」と「LAMBDA関数」とは？
